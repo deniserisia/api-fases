@@ -5,7 +5,9 @@ import numpy as np
 from pysat.solvers import Solver
 
 app = Flask(__name__)
-CORS(app)  # Permite requisições de qualquer origem
+
+# Permite requisições apenas do domínio específico
+CORS(app, origins="https://sat-mu.vercel.app")
 
 def generate_clause(n, k):
     """Gera uma cláusula aleatória com k literais, sem repetições ou contradições."""
