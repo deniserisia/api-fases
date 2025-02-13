@@ -1,18 +1,20 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Importar a extensão CORS
+from flask_cors import CORS
 import random
 
 app = Flask(__name__)
 CORS(app)  # Habilitar CORS para todas as rotas
 
-class SATRequest:
-    def __init__(self, n, m, k):
-        self.n = n
-        self.m = m
-        self.k = k
-
 def generate_sat_instance(n, m, k):
+    """
+    Gera uma instância aleatória de k-SAT.
+    :param n: Número de variáveis.
+    :param m: Número de cláusulas.
+    :param k: Número de literais por cláusula.
+    :return: Lista de cláusulas.
+    """
     clauses = set()
+    
     while len(clauses) < m:
         clause = set()
         while len(clause) < k:
@@ -21,19 +23,38 @@ def generate_sat_instance(n, m, k):
                 literal = -literal
             if -literal not in clause:
                 clause.add(literal)
-        clauses.add(tuple(clause))
+        
+        clauses.add(tuple(clause))  # Garante que não há cláusulas duplicadas
+    
     return list(clauses)
 
 @app.route("/generate-sat/", methods=["POST"])
 def generate_sat():
+    """
+    Endpoint para gerar uma instância k-SAT e calcular a razão α = m/n.
+    """
     data = request.get_json()
-    n, m, k = data["n"], data["m"], data["k"]
     
+    try:
+        n = int(data["n"])
+        m = int(data["m"])
+        k = int(data["k"])
+    except (KeyError, ValueError):
+        return jsonify({"error": "Parâmetros inválidos! Certifique-se de que n, m e k são números inteiros."}), 400
+
     if k not in [3, 5]:
         return jsonify({"error": "Valor de k inválido! Escolha 3 ou 5."}), 400
-    
+
     instance = generate_sat_instance(n, m, k)
-    return jsonify({"n": n, "m": m, "k": k, "clauses": instance})
+    alpha = round(m / n, 2)  # Razão cláusulas/variáveis
+
+    return jsonify({
+        "n": n,
+        "m": m,
+        "k": k,
+        "alpha": alpha,  # Adicionando a razão α
+        "clauses": instance
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)
